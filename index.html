@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>吳凡數學115電子紀念卡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f5f6f8;
+            color: #0f172a;
+            touch-action: manipulation;
+        }
+        .font-display {
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+        #camFileIn, #albumFileIn {
+            display: none;
+        }
+        /* 碳纖維斜紋質感背景 */
+        .carbon-bg {
+            background-color: #111114;
+            background-image: 
+                repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0px, rgba(255, 255, 255, 0.04) 2px, transparent 2px, transparent 8px),
+                repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.4) 0px, rgba(0, 0, 0, 0.4) 2px, transparent 2px, transparent 8px);
+            background-size: 8px 8px;
+        }
+        /* 擬真填空題橫線輸入風格 - 修復溢出與線條長度問題 */
+        .fill-input {
+            border: 0;
+            border-bottom: 2px solid #1b427d;
+            background: transparent;
+            font-weight: 800;
+            color: #0f172a;
+            text-align: center;
+            border-radius: 0;
+            outline: none;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+        .fill-input:focus {
+            border-bottom-color: #0f2445;
+            background: rgba(27, 66, 125, 0.05);
+        }
+        .modal-fade {
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-0 pb-10">
+
+    <!-- 圖二：頂部獨立導航列（全螢幕寬度） -->
+    <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-30 px-5 py-3.5 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-2">
+            <h1 class="text-base font-extrabold text-slate-900 tracking-wide font-display uppercase">
+                115 · WUFAN MEMORY
+            </h1>
+        </div>
+        <span class="text-xs font-bold text-slate-400 font-display tracking-widest">115電子紀念卡</span>
+    </header>
+
+    <main class="w-full max-w-md flex flex-col items-center gap-4 px-4 my-3">
+        <!-- 畫布預覽容器 (9:16) -->
+        <div class="w-full aspect-[9/16] bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 relative flex items-center justify-center">
+            <canvas id="cardCanvas" width="1080" height="1920" class="w-full h-full object-contain"></canvas>
+        </div>
+
+        <div class="w-full flex flex-col gap-3">
+            <!-- 順序 1：上傳照片（黑色區塊直接作為主要上傳操作，帶碳纖維斜紋質感） -->
+            <p class="text-xs tracking-widest text-slate-400 uppercase ml-1">STEP 1 · 上傳照片</p>
+            
+            <div class="w-full carbon-bg text-white p-4 rounded-2xl border border-slate-800 shadow-sm flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-[#e6c48a] font-black text-sm tracking-wide">📷 選擇你的照片</span>
+                    <span class="text-[11px] text-slate-400">支援即時拍照與自拍</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 w-full">
+                    <!-- 相機 -->
+                    <label for="camFileIn" class="bg-slate-900/80 hover:bg-slate-800 active:scale-[0.98] border border-slate-700/80 rounded-xl py-3 px-2 flex items-center justify-center gap-2 cursor-pointer transition shadow-inner">
+                        <span class="text-lg">📷</span>
+                        <span class="text-xs font-extrabold text-white">開啟相機</span>
+                    </label>
+                    <input type="file" id="camFileIn" accept="image/*" capture="environment">
+
+                    <!-- 相簿 -->
+                    <label for="albumFileIn" class="bg-slate-900/80 hover:bg-slate-800 active:scale-[0.98] border border-slate-700/80 rounded-xl py-3 px-2 flex items-center justify-center gap-2 cursor-pointer transition shadow-inner">
+                        <span class="text-lg">🖼️</span>
+                        <span class="text-xs font-extrabold text-white">從相簿選擇</span>
+                    </label>
+                    <input type="file" id="albumFileIn" accept="image/*">
+                </div>
+            </div>
+
+            <!-- 順序 2：我是＿＿＿ -->
+            <p class="text-xs font-black tracking-widest text-slate-400 uppercase ml-1 mt-1">STEP 2 · 填寫決心與故事</p>
+            <div class="w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 overflow-hidden">
+                <label class="text-xs font-bold text-[#1b427d]">填寫姓名</label>
+                <div class="flex items-center gap-2 text-xl font-black text-slate-800 w-full min-w-0">
+                    <span class="shrink-0">我是</span>
+                    <div class="flex-1 min-w-0">
+                        <input type="text" id="userNameInput" value="吳小凡" maxlength="10" placeholder="你的名字" class="fill-input py-1 text-xl">
+                    </div>
+                </div>
+                <small class="text-[11px] text-slate-400"></small>
+            </div>
+
+            <!-- 順序 3：我要考上＿＿大學 -->
+            <div class="w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 overflow-hidden">
+                <label class="text-xs font-bold text-[#1b427d]">填寫目標大學</label>
+                <div class="flex items-center gap-2 text-xl font-black text-slate-800 w-full min-w-0">
+                    <span class="shrink-0">我要考上</span>
+                    <div class="flex-1 min-w-0">
+                        <input type="text" id="targetUniInput" value="台灣" maxlength="12" placeholder="目標校名" class="fill-input py-1 text-xl">
+                    </div>
+                    <span class="shrink-0">大學</span>
+                </div>
+                <small class="text-[11px] text-slate-400"></small>
+            </div>
+
+            <!-- 順序 4：想對自己說的一句話 -->
+            <div class="w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 overflow-hidden">
+                <label class="text-xs font-bold text-[#1b427d]">想對自己說的一句話</label>
+                <div class="flex items-center gap-2 text-base font-bold text-slate-800 w-full min-w-0">
+                    <div class="flex-1 min-w-0">
+                        <input type="text" id="userQuoteInput" value="全力以赴，頂標非我莫屬！" maxlength="28" placeholder="寫下一句堅持下去的決心..." class="fill-input py-1 text-center text-sm font-semibold">
+                    </div>
+                </div>
+                <small class="text-[11px] text-slate-400"></small>
+            </div>
+
+            <!-- 順序 5：圖一按鍵 - 下載儲存照片 -->
+            <button id="generateBtn" class="w-full mt-2 bg-[#1b427d] hover:bg-[#153463] active:bg-[#0f2445] text-white font-black py-4 px-4 rounded-2xl text-center shadow-lg transition text-base flex items-center justify-center gap-2">
+                <span>📥 儲存 / 下載卡片</span>
+                <span class="text-xs font-normal opacity-80"></span>
+            </button>
+        </div>
+    </main>
+
+    <!-- 備用降級彈窗（當瀏覽器不支援 Web Share API 時自動彈出） -->
+    <div id="resultModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 flex flex-col items-center modal-fade shadow-2xl relative">
+            <h3 class="text-base font-black text-slate-900 mb-1">🎉 紀念卡已合成完畢！</h3>
+            <p class="text-xs text-slate-500 text-center mb-3">
+                請直接「長按下方圖片」選擇「儲存影像」或「加入照片」儲存至相簿。
+            </p>
+            
+            <div class="w-full aspect-[9/16] bg-slate-100 rounded-xl overflow-hidden mb-4 border border-slate-200 relative shadow-inner">
+                <img id="resultImagePreview" class="w-full h-full object-contain" alt="合成紀念卡預覽">
+            </div>
+
+            <div class="flex gap-2 w-full">
+                <button id="closeModalBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm transition">
+                    關閉返回
+                </button>
+                <a id="downloadLink" class="flex-1 bg-[#1b427d] hover:bg-[#153463] text-white font-bold py-2.5 rounded-xl text-sm text-center transition flex items-center justify-center" download="WUFAN-115-MEMORY.png">
+                    下載圖檔
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('cardCanvas');
+        const ctx = canvas.getContext('2d');
+        const camFileIn = document.getElementById('camFileIn');
+        const albumFileIn = document.getElementById('albumFileIn');
+        const userNameInput = document.getElementById('userNameInput');
+        const targetUniInput = document.getElementById('targetUniInput');
+        const userQuoteInput = document.getElementById('userQuoteInput');
+        const generateBtn = document.getElementById('generateBtn');
+        
+        const resultModal = document.getElementById('resultModal');
+        const resultImagePreview = document.getElementById('resultImagePreview');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const downloadLink = document.getElementById('downloadLink');
+
+        let uploadedImage = null;
+
+        // 畫布規格（1080x1920，精確對齊原版黃金比例）
+        const W = 1080;
+        const H = 1920;
+        const BAND_H = 150;
+        const PA = { x: 24, y: 172, w: 1032, h: 1260 };
+        const FOOT_H = 46;
+        const BRAND_COLOR = '#1b427d';
+        const BRAND_DARK = '#122e58';
+        const ACCENT_GOLD = 'rgba(251,191,36,0.9)';
+
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function drawTrophy(ctx, cx, cy, color) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 5;
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+            
+            ctx.beginPath();
+            ctx.moveTo(cx - 22, cy - 26);
+            ctx.lineTo(cx + 22, cy - 26);
+            ctx.quadraticCurveTo(cx + 22, cy + 6, cx, cy + 10);
+            ctx.quadraticCurveTo(cx - 22, cy + 6, cx - 22, cy - 26);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(cx - 26, cy - 14, 10, Math.PI * 0.5, Math.PI * 1.5);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx + 26, cy - 14, 10, Math.PI * 1.5, Math.PI * 0.5);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy + 10);
+            ctx.lineTo(cx, cy + 20);
+            ctx.moveTo(cx - 14, cy + 24);
+            ctx.lineTo(cx + 14, cy + 24);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawPhotoPlaceholder(ctx, area) {
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(area.x, area.y, area.w, area.h);
+
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(area.x + 1.5, area.y + 1.5, area.w - 3, area.h - 3);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 48px "Noto Sans TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('📷 請點擊下方按鈕上傳照片', area.x + area.w / 2, area.y + area.h / 2);
+        }
+
+        function drawCard() {
+            // 1. 純白底色
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            // 2. 頂部深藍色橫幅
+            const bandGrad = ctx.createLinearGradient(0, 0, 0, BAND_H);
+            bandGrad.addColorStop(0, BRAND_COLOR);
+            bandGrad.addColorStop(1, BRAND_DARK);
+            ctx.fillStyle = bandGrad;
+            ctx.fillRect(0, 0, W, BAND_H);
+
+            // 頂部左側文字
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 52px "Barlow Condensed", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '1.5px';
+            ctx.fillText('2026 WuFan Math', 48, BAND_H / 2);
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+
+            // 頂部右側獎盃
+            drawTrophy(ctx, W - 68, BAND_H / 2, '#ffffff');
+
+            // 頂部金色細線
+            ctx.fillStyle = ACCENT_GOLD;
+            ctx.fillRect(0, BAND_H - 3, W, 3);
+
+            // 3. 中央照片區域
+            ctx.save();
+            roundRect(ctx, PA.x, PA.y, PA.w, PA.h, 14);
+            ctx.clip();
+
+            if (uploadedImage) {
+                drawCoverImage(ctx, uploadedImage, PA.x, PA.y, PA.w, PA.h);
+            } else {
+                drawPhotoPlaceholder(ctx, PA);
+            }
+            ctx.restore();
+
+            // 4. 左側細色標
+            const stripeX = 24;
+            const stripeTop = PA.y + PA.h + 24;
+            const stripeH = 370;
+            ctx.fillStyle = BRAND_COLOR;
+            ctx.fillRect(stripeX, stripeTop, 8, stripeH);
+
+            // 5. 下方文字資訊區域
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+
+            const startX = 58;
+
+            // 第一行：我是＿＿＿
+            const line1Y = PA.y + PA.h + 96;
+            ctx.font = '900 68px "Noto Sans TC", sans-serif';
+            ctx.fillStyle = '#0f172a';
+            const nameVal = userNameInput.value.trim() || "吳小凡";
+            ctx.fillText(`我是 ${nameVal}`, startX, line1Y);
+
+            // 第二行：我要考上＿＿＿＿大學
+            const line2Y = line1Y + 92;
+            ctx.font = '900 64px "Noto Sans TC", sans-serif';
+            ctx.fillStyle = BRAND_COLOR;
+            const rawUni = targetUniInput.value.trim() || "台灣";
+            const uniVal = rawUni.endsWith("大學") ? rawUni : `${rawUni}大學`;
+            ctx.fillText(`我要考上 ${uniVal}`, startX, line2Y);
+
+            // 第三行：想對自己說的一段話
+            const line3Y = line2Y + 84;
+            ctx.font = '500 38px "Noto Sans TC", sans-serif';
+            ctx.fillStyle = '#334155';
+            const quoteVal = userQuoteInput.value.trim() || "全力以赴，頂標非我莫屬！";
+            ctx.fillText(quoteVal, startX, line3Y);
+
+            // 第四行：日期與地點
+            const dateY = line3Y + 68;
+            ctx.font = '600 30px "Barlow Condensed", "Noto Sans TC", sans-serif';
+            ctx.fillStyle = '#64748b';
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '1px';
+            const now = new Date();
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const dateStr = `${months[now.getMonth()]} ${String(now.getDate()).padStart(2, '0')}, ${now.getFullYear()}`;
+            ctx.fillText(`${dateStr} · 吳凡數學`, startX, dateY);
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+
+            // 6. 底部深藍色細條
+            ctx.fillStyle = BRAND_COLOR;
+            ctx.fillRect(0, H - FOOT_H, W, FOOT_H);
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '4px';
+            ctx.font = '400 21px "Noto Sans TC", sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('吳凡數學陪你戰115學測', W / 2, H - FOOT_H / 2);
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+        }
+
+        function drawCoverImage(ctx, img, x, y, w, h) {
+            let imgRatio = img.width / img.height;
+            let targetRatio = w / h;
+            let renderW, renderH, renderX, renderY;
+
+            if (imgRatio > targetRatio) {
+                renderH = h;
+                renderW = h * imgRatio;
+                renderX = x + (w - renderW) / 2;
+                renderY = y;
+            } else {
+                renderW = w;
+                renderH = w / imgRatio;
+                renderX = x;
+                renderY = y + (h - renderH) / 2;
+            }
+            ctx.drawImage(img, renderX, renderY, renderW, renderH);
+        }
+
+        function handleFileUpload(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    uploadedImage = img;
+                    drawCard();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        camFileIn.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+        albumFileIn.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+
+        [userNameInput, targetUniInput, userQuoteInput].forEach(inp => {
+            inp.addEventListener('input', drawCard);
+        });
+
+        // 圖一核心：按下載/儲存時，調用原生 Web Share API 彈出 iOS 系統原生選單
+        generateBtn.addEventListener('click', async function() {
+            drawCard();
+
+            if (canvas.toBlob) {
+                canvas.toBlob(async function(blob) {
+                    if (!blob) return fallbackModal();
+
+                    const file = new File([blob], 'wufan-memory.jpg', { type: 'image/jpeg' });
+
+                    // 檢查瀏覽器是否支援直接分享圖片檔案（iOS Safari 支援度最佳）
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: '吳凡數學 115 紀念卡',
+                                text: '我的 115 學測紀念卡！'
+                            });
+                            return; // 成功呼叫原生選單即完成
+                        } catch (err) {
+                            if (err.name === 'AbortError') return; // 使用者自己按取消，不需要開彈窗
+                        }
+                    }
+                    // 不支援或失敗時降級為長按彈窗
+                    fallbackModal();
+                }, 'image/jpeg', 0.95);
+            } else {
+                fallbackModal();
+            }
+        });
+
+        function fallbackModal() {
+            const dataURL = canvas.toDataURL('image/jpeg', 0.95);
+            resultImagePreview.src = dataURL;
+            downloadLink.href = dataURL;
+            resultModal.classList.remove('hidden');
+        }
+
+        closeModalBtn.addEventListener('click', () => resultModal.classList.add('hidden'));
+        resultModal.addEventListener('click', (e) => {
+            if (e.target === resultModal) resultModal.classList.add('hidden');
+        });
+
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(drawCard);
+        } else {
+            drawCard();
+        }
+    </script>
+</body>
+</html>
