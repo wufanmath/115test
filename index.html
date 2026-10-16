@@ -186,6 +186,15 @@
 
         let uploadedImage = null;
 
+        // 載入右下角老師 Q 版人物圖檔 (fan.png)
+        const fanTeacherImg = new Image();
+        let fanImgLoaded = false;
+        fanTeacherImg.onload = function() {
+            fanImgLoaded = true;
+            drawCard();
+        };
+        fanTeacherImg.src = 'fan.png';
+
         // 畫布規格（1080x1920，精確對齊原版黃金比例）
         const W = 1080;
         const H = 1920;
@@ -352,6 +361,34 @@
             ctx.fillStyle = '#ffffff';
             ctx.fillText('吳凡數學陪你戰115學測', W / 2, H - FOOT_H / 2);
             if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+
+            // 7. 右下角對齊：吳凡老師去背 Q 版人物 (fan.png)
+            if (fanImgLoaded && fanTeacherImg.naturalWidth) {
+                ctx.save();
+                // 調整寬度約 255px，保留足夠上方留白，不碰觸照片區
+                const targetW = 400;
+                const naturalRatio = fanTeacherImg.naturalHeight / fanTeacherImg.naturalWidth;
+                let targetH = targetW * naturalRatio;
+
+                // 限制高度確保頭頂不碰觸照片區底線 (PA.y + PA.h = 1432)，留出至少 30px 空隙
+                const maxAvailableH = H - (PA.y + PA.h + 30);
+                if (targetH > maxAvailableH) {
+                    targetH = maxAvailableH;
+                }
+                const actualW = targetH / naturalRatio;
+
+                const posX = W - actualW - 20; // 靠右側留 20px
+                const posY = H - targetH;      // 完全切齊整張卡片的最下緣
+
+                // 微柔陰影營造立體感
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.18)';
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetX = -2;
+                ctx.shadowOffsetY = 4;
+
+                ctx.drawImage(fanTeacherImg, posX, posY, actualW, targetH);
+                ctx.restore();
+            }
         }
 
         function drawCoverImage(ctx, img, x, y, w, h) {
