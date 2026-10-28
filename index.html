@@ -102,8 +102,9 @@
 
     <!-- 編輯模式 (原有的主畫面，加上 id="editorView") -->
     <main id="editorView" class="w-full max-w-md flex flex-col items-center gap-4 px-4 my-3">
-        <!-- 畫布預覽容器 (加強真實卡片的陰影深度，並加上 shimmer-effect 掃光特效) -->
-        <div class="w-[88%] max-w-[360px] aspect-[9/16] bg-white rounded-[1.5rem] shadow-[0_25px_60px_-10px_rgba(0,0,0,0.35)] overflow-hidden border border-slate-100 relative flex items-center justify-center my-2 transition-transform active:scale-[0.99] shimmer-effect">
+        <!-- 畫布預覽容器 (加強真實卡片的陰影深度，並加上 shimmer-effect 掃光特效) 
+             📝 修改：將 rounded-[1.5rem] 改為 rounded-xl (12px)，讓圓角縮小一半 -->
+        <div class="w-[88%] max-w-[360px] aspect-[9/16] bg-white rounded-xl shadow-[0_25px_60px_-10px_rgba(0,0,0,0.35)] overflow-hidden border border-slate-100 relative flex items-center justify-center my-2 transition-transform active:scale-[0.99] shimmer-effect">
             <canvas id="cardCanvas" width="1080" height="1920" class="w-full h-full object-contain cursor-pointer" title="點擊上傳照片"></canvas>
         </div>
         
@@ -208,7 +209,8 @@
             <p class="text-sm text-slate-500">已自動備份，現在可以下載或分享給朋友</p>
         </div>
         
-        <img id="finalImagePreview" src="" alt="完成的紀念卡" class="w-[85%] max-w-[340px] h-auto rounded-[1.5rem] shadow-[0_25px_60px_-10px_rgba(0,0,0,0.35)] border border-slate-100">
+        <!-- 📝 修改：將 rounded-[1.5rem] 改為 rounded-xl (12px) -->
+        <img id="finalImagePreview" src="" alt="完成的紀念卡" class="w-[85%] max-w-[340px] h-auto rounded-xl shadow-[0_25px_60px_-10px_rgba(0,0,0,0.35)] border border-slate-100">
         
         <div class="w-full flex flex-col gap-3 pb-8 mt-2">
             <button id="finalShareBtn" class="bg-[#1b427d] hover:bg-[#153463] shadow-[0_8px_20px_rgba(27,66,125,0.25)] active:scale-[0.98] rounded-xl py-4 flex items-center justify-center gap-3 cursor-pointer transition-all text-white w-full">
@@ -487,7 +489,7 @@
             if (fanImgLoaded && fanTeacherImg.naturalWidth) {
                 ctx.save();
                 // 調整寬度約 255px，保留足夠上方留白，不碰觸照片區
-                const targetW = 320;
+                const targetW = 350;
                 const naturalRatio = fanTeacherImg.naturalHeight / fanTeacherImg.naturalWidth;
                 let targetH = targetW * naturalRatio;
 
@@ -632,12 +634,11 @@
             loadingModal.classList.remove('hidden');
 
             try {
-                // 2. 執行上傳 (如果沒填 GAS_URL，則模擬 2 秒假動作讓你可以先測試介面)
-                if (!GAS_WEB_APP_URL) {
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                } else {
-                    const response = await fetch(GAS_WEB_APP_URL, {
+                // 2. 執行上傳 (加上 mode: 'no-cors' 解決重新導向被阻擋的錯誤)
+                if (GAS_WEB_APP_URL) {
+                    await fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
+                        mode: 'no-cors', // 💡 關鍵解法：告訴瀏覽器「不要管回傳內容，只管把資料送出去」
                         body: JSON.stringify({
                             image: dataURL,
                             filename: `116_${userNameInput.value.trim() || 'User'}.jpg`
@@ -646,18 +647,19 @@
                             'Content-Type': 'text/plain;charset=utf-8',
                         }
                     });
-                    const result = await response.json();
-                    if (!result.success) throw new Error("上傳失敗");
                 }
 
-                // 3. 上傳成功，切換到第二介面
-                loadingModal.classList.add('hidden');
-                editorView.classList.add('hidden');
-                finalView.classList.remove('hidden');
-                
-                // 渲染結果圖片，並強制將畫面捲到最上方
-                finalImagePreview.src = dataURL;
-                window.scrollTo(0, 0);
+                // 因為 no-cors 無法直接判斷回傳，設定 1.5 秒讓動畫跑完，就當作資料送出去了
+                setTimeout(() => {
+                    // 3. 上傳成功，切換到第二介面
+                    loadingModal.classList.add('hidden');
+                    editorView.classList.add('hidden');
+                    finalView.classList.remove('hidden');
+                    
+                    // 渲染結果圖片，並強制將畫面捲到最上方
+                    finalImagePreview.src = dataURL;
+                    window.scrollTo(0, 0);
+                }, 1500);
 
             } catch (error) {
                 console.error(error);
