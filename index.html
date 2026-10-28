@@ -319,8 +319,8 @@
         // 畫布規格（1080x1920，精確對齊原版黃金比例）
         const W = 1080;
         const H = 1920;
-        const BAND_H = 100;
-        const PA = { x: 24, y: 124, w: 1032, h: 1308 };
+        const BAND_H = 125; // ⬆️ 改為 125 (原本 100 的 1.25 倍)
+        const PA = { x: 24, y: 150, w: 1032, h: 1308 }; // ⬆️ 照片區塊配合 Header 往下微調
         const FOOT_H = 46;
         const BRAND_COLOR = '#1b427d';
         const BRAND_DARK = '#122e58';
@@ -429,8 +429,8 @@
 
             // 4. 左側細色標
             const stripeX = 24;
-            const stripeTop = PA.y + PA.h + 24;
-            const stripeH = 370;
+            const stripeTop = PA.y + PA.h + 36; // ⬅️ 往下微調，對齊文字頂部
+            const stripeH = 332; // ⬅️ 調整長度，讓它與文字區完美置中包覆
             ctx.fillStyle = BRAND_COLOR;
             ctx.fillRect(stripeX, stripeTop, 8, stripeH);
 
@@ -441,14 +441,14 @@
             const startX = 58;
 
             // 第一行：我是＿＿＿
-            const line1Y = PA.y + PA.h + 96;
+            const line1Y = PA.y + PA.h + 110; // ⬅️ 往下推 24px，與左側線條達到視覺上的絕對置中
             ctx.font = '900 68px "Noto Sans TC", sans-serif';
             ctx.fillStyle = '#0f172a';
             const nameVal = userNameInput.value.trim() || "吳小凡";
             ctx.fillText(`我是 ${nameVal}`, startX, line1Y);
 
             // 第二行：我要考上＿＿＿＿大學
-            const line2Y = line1Y + 92;
+            const line2Y = line1Y + 86;
             ctx.font = '900 64px "Noto Sans TC", sans-serif';
             ctx.fillStyle = BRAND_COLOR;
             const rawUni = targetUniInput.value.trim() || "台灣";
@@ -456,14 +456,14 @@
             ctx.fillText(`我要考上 ${uniVal}`, startX, line2Y);
 
             // 第三行：想對自己說的一段話
-            const line3Y = line2Y + 84;
+            const line3Y = line2Y + 80;
             ctx.font = '700 38px "Noto Sans TC", sans-serif';
             ctx.fillStyle = '#334155';
             const quoteVal = userQuoteInput.value.trim() || '全力以赴，頂標非我莫屬！';
             ctx.fillText(quoteVal, startX, line3Y);
 
             // 第四行：日期與地點
-            const dateY = line3Y + 68;
+            const dateY = line3Y + 64;
             ctx.font = '500 30px "Barlow Condensed", "Noto Sans TC", sans-serif';
             ctx.fillStyle = '#64748b';
             if ('letterSpacing' in ctx) ctx.letterSpacing = '1px';
@@ -489,7 +489,7 @@
             if (fanImgLoaded && fanTeacherImg.naturalWidth) {
                 ctx.save();
                 // 調整寬度約 255px，保留足夠上方留白，不碰觸照片區
-                const targetW = 350;
+                const targetW = 320;
                 const naturalRatio = fanTeacherImg.naturalHeight / fanTeacherImg.naturalWidth;
                 let targetH = targetW * naturalRatio;
 
