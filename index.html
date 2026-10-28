@@ -4,16 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>吳凡數學116電子紀念卡</title>
+    <!-- 引入 Cropper.js 套件與樣式 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f5f6f8;
+            background-color: #f3f4f6; /* 純淨質感的中性淺灰底色，徹底去除藍色調 */
             color: #0f172a;
             touch-action: manipulation;
+            -webkit-font-smoothing: antialiased;
         }
         .font-display {
             font-family: 'Barlow Condensed', sans-serif;
@@ -21,20 +25,27 @@
         #camFileIn, #albumFileIn {
             display: none;
         }
-        /* 碳纖維斜紋質感背景 */
-        .carbon-bg {
-            background-color: #111114;
-            background-image: 
-                repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0px, rgba(255, 255, 255, 0.04) 2px, transparent 2px, transparent 8px),
-                repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.4) 0px, rgba(0, 0, 0, 0.4) 2px, transparent 2px, transparent 8px);
-            background-size: 8px 8px;
+        
+        /* 頂級純白卡片：極柔和的陰影，無生硬邊框 */
+        .premium-card {
+            background-color: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04);
         }
-        /* 擬真填空題橫線輸入風格 - 修復溢出與線條長度問題 */
+
+        /* 淺色毛玻璃導航列 */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* 擬真填空題橫線 - 淺色版 */
         .fill-input {
             border: 0;
-            border-bottom: 2px solid #1b427d;
+            border-bottom: 1.5px solid #e2e8f0; /* 預設極淺灰線 */
             background: transparent;
-            font-weight: 800;
+            font-weight: 500;
             color: #0f172a;
             text-align: center;
             border-radius: 0;
@@ -42,127 +53,217 @@
             width: 100%;
             min-width: 0;
             box-sizing: border-box;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        /* 只有在 Focus 時才亮起品牌深藍色 */
         .fill-input:focus {
-            border-bottom-color: #0f2445;
-            background: rgba(27, 66, 125, 0.05);
+            border-bottom-color: #1b427d;
+            box-shadow: 0 4px 6px -4px rgba(27, 66, 125, 0.1);
         }
+        
         .modal-fade {
-            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.96); }
             to { opacity: 1; transform: scale(1); }
         }
+
+        /* 卡片掃光特效 */
+        @keyframes shimmerSweep {
+            0% { transform: translateX(-150%) skewX(-30deg); }
+            60%, 100% { transform: translateX(200%) skewX(-30deg); }
+        }
+        .shimmer-effect::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -50%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.35), transparent);
+            animation: shimmerSweep 4.5s ease-in-out infinite;
+            pointer-events: none; /* 確保不影響點擊上傳 */
+            z-index: 10;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-0 pb-10">
 
-    <!-- 圖二：頂部獨立導航列（全螢幕寬度） -->
-    <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-30 px-5 py-3.5 flex items-center justify-between shadow-sm">
+    <!-- 頂部淺色毛玻璃導航列 -->
+    <header class="w-full glass-header border-b border-slate-200/60 sticky top-0 z-30 px-5 py-3.5 flex items-center justify-between">
         <div class="flex items-center gap-2">
-            <h1 class="text-base font-extrabold text-slate-900 tracking-wide font-display uppercase">
-                WuFAan
+            <h1 class="text-base font-semibold text-slate-800 tracking-wide font-display uppercase">
+                116 · WUFAN MEMORY
             </h1>
         </div>
-        <span class="text-xs font-bold text-slate-400 font-display tracking-widest">吳凡數學116學測紀念卡</span>
+        <span class="text-[10px] font-bold text-slate-500 font-display tracking-[0.15em] bg-slate-100 border border-slate-200 px-2 py-1 rounded-full">OFFICIAL</span>
     </header>
 
-    <main class="w-full max-w-md flex flex-col items-center gap-4 px-4 my-3">
-        <!-- 畫布預覽容器 (9:16) -->
-        <div class="w-full aspect-[9/16] bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 relative flex items-center justify-center">
-            <canvas id="cardCanvas" width="1080" height="1920" class="w-full h-full object-contain"></canvas>
+    <!-- 編輯模式 (原有的主畫面，加上 id="editorView") -->
+    <main id="editorView" class="w-full max-w-md flex flex-col items-center gap-4 px-4 my-3">
+        <!-- 畫布預覽容器 (加強真實卡片的陰影深度，並加上 shimmer-effect 掃光特效) -->
+        <div class="w-[88%] max-w-[360px] aspect-[9/16] bg-white rounded-[1.5rem] shadow-[0_25px_60px_-10px_rgba(0,0,0,0.35)] overflow-hidden border border-slate-100 relative flex items-center justify-center my-2 transition-transform active:scale-[0.99] shimmer-effect">
+            <canvas id="cardCanvas" width="1080" height="1920" class="w-full h-full object-contain cursor-pointer" title="點擊上傳照片"></canvas>
         </div>
+        
+        <!-- 提示文字 -->
+        <p class="text-xs text-slate-400 font-medium tracking-wide -mt-2 mb-1">
+            💡 點擊上方卡面或下方按鍵，即可換成你的專屬照片
+        </p>
 
-        <div class="w-full flex flex-col gap-3">
-            <!-- 順序 1：上傳照片（黑色區塊直接作為主要上傳操作，帶碳纖維斜紋質感） -->
-            <p class="text-xs tracking-widest text-slate-400 uppercase ml-1">STEP 1 · 上傳照片</p>
-            
-            <div class="w-full carbon-bg text-white p-4 rounded-2xl border border-slate-800 shadow-sm flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-[#e6c48a] font-black text-sm tracking-wide">📷 選擇你的照片</span>
-                    <span class="text-[11px] text-slate-400">支援即時拍照與自拍</span>
+        <div class="w-full flex flex-col gap-7 mt-2 pb-6">
+
+            <!-- SECTION: PHOTO (移至最上方) -->
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-2 px-1">
+                    <div class="w-1.5 h-1.5 rounded-full border-[1.5px] border-[#1b427d]"></div>
+                    <h2 class="text-[11px] font-bold text-slate-500 tracking-[0.15em] uppercase">Photo · 照片</h2>
                 </div>
-                <div class="grid grid-cols-2 gap-2.5 w-full">
+                
+                <div class="grid grid-cols-2 gap-3 w-full">
                     <!-- 相機 -->
-                    <label for="camFileIn" class="bg-slate-900/80 hover:bg-slate-800 active:scale-[0.98] border border-slate-700/80 rounded-xl py-3 px-2 flex items-center justify-center gap-2 cursor-pointer transition shadow-inner">
-                        <span class="text-lg">📷</span>
-                        <span class="text-xs font-extrabold text-white">開啟相機</span>
+                    <label for="camFileIn" class="bg-white border border-slate-200 shadow-sm hover:border-[#1b427d] active:scale-[0.98] rounded-xl py-5 flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all text-[#1b427d]">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" /></svg>
+                        <span class="text-sm font-bold text-slate-700">開啟相機</span>
                     </label>
-                    <input type="file" id="camFileIn" accept="image/*" capture="environment">
+                    <input type="file" id="camFileIn" accept="image/*" capture="environment" class="hidden">
 
                     <!-- 相簿 -->
-                    <label for="albumFileIn" class="bg-slate-900/80 hover:bg-slate-800 active:scale-[0.98] border border-slate-700/80 rounded-xl py-3 px-2 flex items-center justify-center gap-2 cursor-pointer transition shadow-inner">
-                        <span class="text-lg">🖼️</span>
-                        <span class="text-xs font-extrabold text-white">從相簿選擇</span>
+                    <label for="albumFileIn" class="bg-white border border-slate-200 shadow-sm hover:border-[#1b427d] active:scale-[0.98] rounded-xl py-5 flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all text-[#1b427d]">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+                        <span class="text-sm font-bold text-slate-700">從相簿選擇</span>
                     </label>
-                    <input type="file" id="albumFileIn" accept="image/*">
+                    <input type="file" id="albumFileIn" accept="image/*" class="hidden">
                 </div>
             </div>
 
-            <!-- 順序 2：我是＿＿＿ -->
-            <p class="text-xs tracking-widest text-slate-400 uppercase ml-1 mt-1">STEP 2 · 填寫決心與故事</p>
-            <div class="w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 overflow-hidden">
-                <label class="text-xs font-bold text-[#1b427d]">填寫姓名</label>
-                <div class="flex items-center gap-2 text-xl font-black text-slate-800 w-full min-w-0">
-                    <span class="shrink-0">我是</span>
-                    <div class="flex-1 min-w-0">
-                        <input type="text" id="userNameInput" value="吳小凡" maxlength="10" placeholder="你的名字" class="fill-input py-1 text-xl">
+            <!-- SECTION: MY STORY -->
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-2 px-1">
+                    <div class="w-1.5 h-1.5 rounded-full border-[1.5px] border-[#1b427d]"></div>
+                    <h2 class="text-[11px] font-bold text-slate-500 tracking-[0.15em] uppercase">My Story · 我的故事</h2>
+                </div>
+                
+                <div class="w-full bg-white border border-[#1b427d]/40 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.04)] p-5 flex flex-col gap-5 rounded-[1.25rem]">
+                    <div class="text-sm font-bold text-[#1b427d]">寫下你的 116 戰略決心</div>
+                    
+                    <div class="flex flex-col gap-4">
+                        <!-- 姓名 -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-semibold text-slate-400 tracking-wider">姓名</label>
+                            <div class="flex items-center gap-2 text-xl font-medium text-slate-800 w-full min-w-0">
+                                <span class="shrink-0 font-medium">我是</span>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="userNameInput" value="" maxlength="10" placeholder="" class="fill-input py-1 text-xl">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 大學 -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-semibold text-slate-400 tracking-wider">目標大學</label>
+                            <div class="flex items-center gap-2 text-xl font-medium text-slate-800 w-full min-w-0">
+                                <span class="shrink-0 font-medium">我要考上</span>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="targetUniInput" value="" maxlength="12" placeholder="" class="fill-input py-1 text-xl">
+                                </div>
+                                <span class="shrink-0 font-medium">大學</span>
+                            </div>
+                        </div>
+
+                        <!-- 一句話 -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-semibold text-slate-400 tracking-wider">想對自己說的一句話</label>
+                            <div class="flex items-center font-medium text-slate-800 w-full min-w-0">
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="userQuoteInput" value="" maxlength="28" placeholder="例如：全力以赴，頂標非我莫屬！" class="fill-input py-2 text-center text-sm font-medium placeholder-slate-300">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1">最多 28 個字，會印在紀念卡的日期上方。</p>
+                        </div>
                     </div>
                 </div>
-                <small class="text-[11px] text-slate-400"></small>
             </div>
 
-            <!-- 順序 3：我要考上＿＿大學 -->
-            <div class="w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 overflow-hidden">
-                <label class="text-xs font-bold text-[#1b427d]">填寫目標大學</label>
-                <div class="flex items-center gap-2 text-xl font-black text-slate-800 w-full min-w-0">
-                    <span class="shrink-0">我要考上</span>
-                    <div class="flex-1 min-w-0">
-                        <input type="text" id="targetUniInput" value="台灣" maxlength="12" placeholder="目標校名" class="fill-input py-1 text-xl">
-                    </div>
-                    <span class="shrink-0">大學</span>
+            <!-- SECTION: KEEP -->
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-2 px-1">
+                    <div class="w-1.5 h-1.5 rounded-full border-[1.5px] border-[#1b427d]"></div>
+                    <h2 class="text-[11px] font-bold text-slate-500 tracking-[0.15em] uppercase">Keep · 收藏與分享</h2>
                 </div>
-                <small class="text-[11px] text-slate-400"></small>
+                
+                <button id="generateBtn" class="bg-[#1b427d] hover:bg-[#153463] shadow-md active:scale-[0.98] rounded-xl py-4 flex items-center justify-center gap-3 cursor-pointer transition-all text-white w-full">
+                    <span class="text-sm font-bold tracking-wide">合成並儲存紀念卡</span>
+                </button>
             </div>
 
-            <!-- 順序 4：想對自己說的一句話 -->
-            <div class="w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 overflow-hidden">
-                <label class="text-xs font-bold text-[#1b427d]">想對自己說的一句話</label>
-                <div class="flex items-center gap-2 text-base font-bold text-slate-800 w-full min-w-0">
-                    <div class="flex-1 min-w-0">
-                        <input type="text" id="userQuoteInput" value="全力以赴，頂標非我莫屬！" maxlength="28" placeholder="寫下一句堅持下去的決心..." class="fill-input py-1 text-center text-sm font-semibold">
-                    </div>
-                </div>
-                <small class="text-[11px] text-slate-400"></small>
-            </div>
+        </div>
+    </main>
 
-            <!-- 順序 5：圖一按鍵 - 下載儲存照片 -->
-            <button id="generateBtn" class="w-full mt-2 bg-[#1b427d] hover:bg-[#153463] active:bg-[#0f2445] text-white font-black py-4 px-4 rounded-2xl text-center shadow-lg transition text-base flex items-center justify-center gap-2">
-                <span>📥 儲存 / 下載卡片</span>
-                <span class="text-xs font-normal opacity-80"></span>
+    <!-- 完成預覽模式 (新介面，只有卡片跟分享按鍵) -->
+    <main id="finalView" class="hidden w-full max-w-md flex flex-col items-center gap-6 px-4 my-6 animate-[fadeIn_0.4s_ease-out]">
+        <div class="text-center space-y-2">
+            <h2 class="text-xl font-bold text-slate-800">🎉 你的專屬戰略卡已完成！</h2>
+            <p class="text-sm text-slate-500">已自動備份，現在可以下載或分享給朋友</p>
+        </div>
+        
+        <img id="finalImagePreview" src="" alt="完成的紀念卡" class="w-[85%] max-w-[340px] h-auto rounded-[1.5rem] shadow-[0_25px_60px_-10px_rgba(0,0,0,0.35)] border border-slate-100">
+        
+        <div class="w-full flex flex-col gap-3 pb-8 mt-2">
+            <button id="finalShareBtn" class="bg-[#1b427d] hover:bg-[#153463] shadow-[0_8px_20px_rgba(27,66,125,0.25)] active:scale-[0.98] rounded-xl py-4 flex items-center justify-center gap-3 cursor-pointer transition-all text-white w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                <span class="text-sm font-bold tracking-wide">儲存 / 下載圖片</span>
+            </button>
+            <button id="backToEditBtn" class="bg-slate-50 hover:bg-slate-100 text-slate-500 font-medium py-3 rounded-xl text-sm transition">
+                返回修改
             </button>
         </div>
     </main>
 
-    <!-- 備用降級彈窗（當瀏覽器不支援 Web Share API 時自動彈出） -->
-    <div id="resultModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-center p-4">
-        <div class="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 flex flex-col items-center modal-fade shadow-2xl relative">
-            <h3 class="text-base font-black text-slate-900 mb-1">🎉 紀念卡已合成完畢！</h3>
-            <p class="text-xs text-slate-500 text-center mb-3">
-                請直接「長按下方圖片」選擇「儲存影像」或「加入照片」儲存至相簿。
-            </p>
-            
-            <div class="w-full aspect-[9/16] bg-slate-100 rounded-xl overflow-hidden mb-4 border border-slate-200 relative shadow-inner">
-                <img id="resultImagePreview" class="w-full h-full object-contain" alt="合成紀念卡預覽">
+    <!-- 載入中緩衝視窗 -->
+    <div id="loadingModal" class="fixed inset-0 z-[60] hidden bg-slate-900/50 flex flex-col items-center justify-center p-4 backdrop-blur-md transition-opacity">
+        <div class="bg-white rounded-2xl p-8 flex flex-col items-center gap-5 shadow-2xl modal-fade">
+            <!-- 轉圈圈動畫 -->
+            <div class="w-12 h-12 border-4 border-slate-100 border-t-[#1b427d] rounded-full animate-spin"></div>
+            <div class="text-center">
+                <h3 class="text-base font-bold text-slate-800">紀念卡合成中...</h3>
+                <p class="text-xs text-slate-500 mt-1">系統正在合成你的專屬紀念卡</p>
             </div>
+        </div>
+    </div>
 
-            <div class="flex gap-2 w-full">
-                <button id="closeModalBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm transition">
+    <!-- 裁切圖片彈窗 -->
+    <div id="cropModal" class="fixed inset-0 z-50 hidden bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="w-full max-w-md bg-white rounded-[1.25rem] overflow-hidden flex flex-col shadow-2xl">
+            <div class="p-4 bg-slate-50 border-b text-center text-sm font-bold text-slate-800 tracking-wider">
+                雙指縮放・拖曳調整位置
+            </div>
+            <!-- Cropper 容器 -->
+            <div class="w-full relative bg-slate-900" style="height: 55vh; max-height: 500px;">
+                <img id="cropperImage" src="" alt="待裁切圖片" class="block max-w-full">
+            </div>
+            <div class="p-4 flex gap-3 bg-white">
+                <button id="cancelCropBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 rounded-xl text-sm transition">
+                    取消
+                </button>
+                <button id="confirmCropBtn" class="flex-1 bg-gradient-to-b from-[#1b427d] to-[#153463] shadow-[0_4px_12px_rgba(27,66,125,0.25)] hover:shadow-[0_6px_16px_rgba(27,66,125,0.35)] text-white font-medium py-3 rounded-xl text-sm transition">
+                    確認裁切
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultModal" class="fixed inset-0 z-50 hidden bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col items-center gap-4 shadow-2xl modal-fade">
+            <h3 class="text-lg font-bold text-slate-800">長按圖片以儲存</h3>
+            <p class="text-xs text-slate-500 -mt-3">或點擊下方按鈕下載檔案</p>
+            <img id="resultImagePreview" src="" alt="生成的紀念卡" class="w-[80%] h-auto rounded-xl shadow-md border border-slate-100">
+            <div class="flex gap-2 w-full mt-2">
+                <button id="closeModalBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-xl text-sm transition">
                     關閉返回
                 </button>
-                <a id="downloadLink" class="flex-1 bg-[#1b427d] hover:bg-[#153463] text-white font-bold py-2.5 rounded-xl text-sm text-center transition flex items-center justify-center" download="WUFAN-115-MEMORY.png">
+                <a id="downloadLink" class="flex-1 bg-[#1b427d] hover:bg-[#153463] text-white font-medium py-2.5 rounded-xl text-sm text-center transition flex items-center justify-center" download="WUFAN-116-MEMORY.png">
                     下載圖檔
                 </a>
             </div>
@@ -179,12 +280,21 @@
         const userQuoteInput = document.getElementById('userQuoteInput');
         const generateBtn = document.getElementById('generateBtn');
         
+        // 新增的 DOM 節點
+        const editorView = document.getElementById('editorView');
+        const finalView = document.getElementById('finalView');
+        const finalImagePreview = document.getElementById('finalImagePreview');
+        const finalShareBtn = document.getElementById('finalShareBtn');
+        const backToEditBtn = document.getElementById('backToEditBtn');
+        const loadingModal = document.getElementById('loadingModal');
+
         const resultModal = document.getElementById('resultModal');
         const resultImagePreview = document.getElementById('resultImagePreview');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const downloadLink = document.getElementById('downloadLink');
 
         let uploadedImage = null;
+        let cropper = null; // 宣告 Cropper 實例變數
 
         // 載入右下角老師 Q 版人物圖檔 (fan.png)
         const fanTeacherImg = new Image();
@@ -195,11 +305,20 @@
         };
         fanTeacherImg.src = 'fan.png';
 
+        // 載入預設照片 example.png
+        const defaultPhotoImg = new Image();
+        let defaultPhotoLoaded = false;
+        defaultPhotoImg.onload = function() {
+            defaultPhotoLoaded = true;
+            drawCard();
+        };
+        defaultPhotoImg.src = 'example.png';
+
         // 畫布規格（1080x1920，精確對齊原版黃金比例）
         const W = 1080;
         const H = 1920;
-        const BAND_H = 150;
-        const PA = { x: 24, y: 172, w: 1032, h: 1260 };
+        const BAND_H = 100;
+        const PA = { x: 24, y: 124, w: 1032, h: 1308 };
         const FOOT_H = 46;
         const BRAND_COLOR = '#1b427d';
         const BRAND_DARK = '#122e58';
@@ -258,7 +377,7 @@
             ctx.strokeRect(area.x + 1.5, area.y + 1.5, area.w - 3, area.h - 3);
 
             ctx.fillStyle = '#94a3b8';
-            ctx.font = '700 48px "Noto Sans TC", sans-serif';
+            ctx.font = '500 48px "Noto Sans TC", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('📷 請點擊下方按鈕上傳照片', area.x + area.w / 2, area.y + area.h / 2);
@@ -278,7 +397,7 @@
 
             // 頂部左側文字
             ctx.fillStyle = '#ffffff';
-            ctx.font = '700 52px "Barlow Condensed", sans-serif';
+            ctx.font = '500 52px "Barlow Condensed", sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
             if ('letterSpacing' in ctx) ctx.letterSpacing = '1.5px';
@@ -299,6 +418,8 @@
 
             if (uploadedImage) {
                 drawCoverImage(ctx, uploadedImage, PA.x, PA.y, PA.w, PA.h);
+            } else if (defaultPhotoLoaded) {
+                drawCoverImage(ctx, defaultPhotoImg, PA.x, PA.y, PA.w, PA.h);
             } else {
                 drawPhotoPlaceholder(ctx, PA);
             }
@@ -334,14 +455,14 @@
 
             // 第三行：想對自己說的一段話
             const line3Y = line2Y + 84;
-            ctx.font = '500 38px "Noto Sans TC", sans-serif';
+            ctx.font = '700 38px "Noto Sans TC", sans-serif';
             ctx.fillStyle = '#334155';
-            const quoteVal = userQuoteInput.value.trim() || "全力以赴，頂標非我莫屬！";
+            const quoteVal = userQuoteInput.value.trim() || '全力以赴，頂標非我莫屬！';
             ctx.fillText(quoteVal, startX, line3Y);
 
             // 第四行：日期與地點
             const dateY = line3Y + 68;
-            ctx.font = '600 30px "Barlow Condensed", "Noto Sans TC", sans-serif';
+            ctx.font = '500 30px "Barlow Condensed", "Noto Sans TC", sans-serif';
             ctx.fillStyle = '#64748b';
             if ('letterSpacing' in ctx) ctx.letterSpacing = '1px';
             const now = new Date();
@@ -357,7 +478,7 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             if ('letterSpacing' in ctx) ctx.letterSpacing = '4px';
-            ctx.font = '400 21px "Noto Sans TC", sans-serif';
+            ctx.font = '500 21px "Noto Sans TC", sans-serif';
             ctx.fillStyle = '#ffffff';
             ctx.fillText('吳凡數學陪你戰116學測', W / 2, H - FOOT_H / 2);
             if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
@@ -366,7 +487,7 @@
             if (fanImgLoaded && fanTeacherImg.naturalWidth) {
                 ctx.save();
                 // 調整寬度約 255px，保留足夠上方留白，不碰觸照片區
-                const targetW = 400;
+                const targetW = 255;
                 const naturalRatio = fanTeacherImg.naturalHeight / fanTeacherImg.naturalWidth;
                 let targetH = targetW * naturalRatio;
 
@@ -410,51 +531,168 @@
             ctx.drawImage(img, renderX, renderY, renderW, renderH);
         }
 
+        // 裁切相關 DOM 節點
+        const cropModal = document.getElementById('cropModal');
+        const cropperImage = document.getElementById('cropperImage');
+        const cancelCropBtn = document.getElementById('cancelCropBtn');
+        const confirmCropBtn = document.getElementById('confirmCropBtn');
+
         function handleFileUpload(file) {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    uploadedImage = img;
-                    drawCard();
-                };
-                img.src = event.target.result;
+                // 打開裁切彈窗
+                cropModal.classList.remove('hidden');
+                
+                // 若已有實例先銷毀，避免前一次設定殘留
+                if (cropper) {
+                    cropper.destroy();
+                }
+                
+                cropperImage.src = event.target.result;
+                
+                // 初始化 Cropper，鎖定比例為卡片區域的比例
+                cropper = new Cropper(cropperImage, {
+                    aspectRatio: PA.w / PA.h, // 鎖定完美比例
+                    viewMode: 1,              // 限制裁切框不能超出圖片範圍
+                    dragMode: 'move',         // 預設為拖曳圖片 (手機端更友善)
+                    autoCropArea: 1,
+                    background: false,
+                    zoomable: true,
+                    scalable: false,
+                    guides: true              // 顯示九宮格輔助線
+                });
+                
+                // 清空 input，確保使用者取消後若選同一張圖片還能觸發上傳
+                camFileIn.value = '';
+                albumFileIn.value = '';
             };
             reader.readAsDataURL(file);
         }
 
+        // 取消按鈕邏輯
+        cancelCropBtn.addEventListener('click', () => {
+            cropModal.classList.add('hidden');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        // 確認裁切邏輯
+        confirmCropBtn.addEventListener('click', () => {
+            if (!cropper) return;
+            
+            // 將裁切後的畫面提取出來 (強制輸出指定尺寸，確保高解析度)
+            const croppedCanvas = cropper.getCroppedCanvas({
+                width: PA.w,
+                height: PA.h
+            });
+            
+            if (croppedCanvas) {
+                const img = new Image();
+                img.onload = function() {
+                    uploadedImage = img;
+                    drawCard();
+                    cropModal.classList.add('hidden');
+                    cropper.destroy();
+                    cropper = null;
+                };
+                img.src = croppedCanvas.toDataURL('image/jpeg', 0.95);
+            }
+        });
+
         camFileIn.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
         albumFileIn.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+
+        // 點擊卡片畫布直接喚起相簿選擇（手機端原生會跳出相機/相簿選項）
+        canvas.addEventListener('click', () => {
+            albumFileIn.click();
+        });
 
         [userNameInput, targetUniInput, userQuoteInput].forEach(inp => {
             inp.addEventListener('input', drawCard);
         });
 
-        // 圖一核心：按下載/儲存時，調用原生 Web Share API 彈出 iOS 系統原生選單
+        // ==========================================
+        // 核心流程：上傳到 Google Drive 並切換介面
+        // ==========================================
+        
+        // 請在此貼上你未來部署好的 Google Apps Script 網址
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxjMfNDB_IefirNh44PppH4mQ_RHbXtIE5H4mClCZd2_1obG3GmUHbHLjiJSABBjfpN/exec"; 
+
+        // 第一階段：點擊合成按鈕
         generateBtn.addEventListener('click', async function() {
             drawCard();
+            
+            if (!canvas.toDataURL) return;
+            const dataURL = canvas.toDataURL('image/jpeg', 0.85); // 壓縮成 JPG 降低上傳體積
+            
+            // 1. 顯示緩衝視窗
+            loadingModal.classList.remove('hidden');
 
+            try {
+                // 2. 執行上傳 (如果沒填 GAS_URL，則模擬 2 秒假動作讓你可以先測試介面)
+                if (!GAS_WEB_APP_URL) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } else {
+                    const response = await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            image: dataURL,
+                            filename: `116_${userNameInput.value.trim() || 'User'}.jpg`
+                        }),
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8',
+                        }
+                    });
+                    const result = await response.json();
+                    if (!result.success) throw new Error("上傳失敗");
+                }
+
+                // 3. 上傳成功，切換到第二介面
+                loadingModal.classList.add('hidden');
+                editorView.classList.add('hidden');
+                finalView.classList.remove('hidden');
+                
+                // 渲染結果圖片，並強制將畫面捲到最上方
+                finalImagePreview.src = dataURL;
+                window.scrollTo(0, 0);
+
+            } catch (error) {
+                console.error(error);
+                alert("伺服器連線異常，請稍後再試！");
+                loadingModal.classList.add('hidden');
+            }
+        });
+
+        // 返回修改按鈕
+        backToEditBtn.addEventListener('click', () => {
+            finalView.classList.add('hidden');
+            editorView.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        });
+
+        // 第二階段：在新介面點擊「儲存/分享」
+        finalShareBtn.addEventListener('click', async function() {
             if (canvas.toBlob) {
                 canvas.toBlob(async function(blob) {
                     if (!blob) return fallbackModal();
 
-                    const file = new File([blob], 'wufan-memory.jpg', { type: 'image/jpeg' });
+                    const file = new File([blob], 'wufan-116-memory.jpg', { type: 'image/jpeg' });
 
-                    // 檢查瀏覽器是否支援直接分享圖片檔案（iOS Safari 支援度最佳）
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try {
                             await navigator.share({
                                 files: [file],
-                                title: '吳凡數學 115 紀念卡',
-                                text: '我的 115 學測紀念卡！'
+                                title: '吳凡數學 116 紀念卡',
+                                text: '我的 116 學測紀念卡！'
                             });
-                            return; // 成功呼叫原生選單即完成
+                            return; 
                         } catch (err) {
-                            if (err.name === 'AbortError') return; // 使用者自己按取消，不需要開彈窗
+                            if (err.name === 'AbortError') return; 
                         }
                     }
-                    // 不支援或失敗時降級為長按彈窗
                     fallbackModal();
                 }, 'image/jpeg', 0.95);
             } else {
